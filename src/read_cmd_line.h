@@ -2,80 +2,82 @@
 #define __READ_CMD_LINE_H
 
 void cmd_line::read_cmd_line ( int argc, char *argv[] ) {
-    
-    ///defaults
-    ancestral_fixed = false ;                  /// set to true for qtl or experimental evolution application if ancestral genotypes are known and at fixed frequencies.
-    
-    /// ideally we recommend pruning LD in advance
-    minimum_distance = 0 ;                          /// minimum distance in morgans between sites to consider
-    ne = 2e4 ;                                      /// actually 2ne
-    
-    // time params to bound our search
-    t_max = 10000 ;
-    t_min = 1 ;
-    p_max = 0.99999 ;
-    p_min = 0.00001 ;
-    t_length = 0.8 ;
-    p_length = 0.8 ;
-    
-    /// if set, we clear once
-    bool clear = false ;
-    
-    /// error rates
-    error_rates = false ;
-    
-    // the default behavior is a single pulse of ancestry 1 into ancestry 0
-    ancestry_pulses.resize( 2 ) ;
-    ancestry_pulses[0].type = 0 ;
-    ancestry_pulses[1].type = 1 ;
-    
-    /// default is 50:50 with single pulse of 1 into 0
-    ancestry_pulses[0].proportion = 0.5 ;
-    ancestry_pulses[1].proportion = 0.5 ;
-    ancestry_pulses[0].proportion_fixed = true ;
-    ancestry_pulses[1].proportion_fixed = true ;
-    
-    /// also the ancestry proportions are known
-    ancestry_proportion.assign(2,0.5) ;
-    
-    /// time is not fixed by default, pulse of 1 into 0
-    /// does not matter, really since 0>1 would be identical in formulation
-    ancestry_pulses[0].time = 3000 ;
-    ancestry_pulses[0].time_fixed = true ;
-    ancestry_pulses[1].time = 10 ;
-    ancestry_pulses[1].time_fixed = false ;
+  ///defaults
+  ancestral_fixed = false ;                  /// set to true for qtl or experimental evolution application if ancestral genotypes are known and at fixed frequencies.
+  
+  /// ideally we recommend pruning LD in advance
+  minimum_distance = 0 ;                          /// minimum distance in morgans between sites to consider
+  ne = 2e4 ;                                      /// actually 2ne
+  
+  // time params to bound our search
+  t_max = 10000 ;
+  t_min = 1 ;
+  p_max = 0.99999 ;
+  p_min = 0.00001 ;
+  t_length = 0.8 ;
+  p_length = 0.8 ;
+  
+  /// if set, we clear once
+  bool clear = false ;
+  
+  /// error rates
+  error_rates = false ;
+  
+  // the default behavior is a single pulse of ancestry 1 into ancestry 0
+  ancestry_pulses.resize( 2 ) ;
+  ancestry_pulses[0].type = 0 ;
+  ancestry_pulses[1].type = 1 ;
+  
+  /// default is 50:50 with single pulse of 1 into 0
+  ancestry_pulses[0].proportion = 0.5 ;
+  ancestry_pulses[1].proportion = 0.5 ;
+  ancestry_pulses[0].proportion_fixed = true ;
+  ancestry_pulses[1].proportion_fixed = true ;
+  
+  /// also the ancestry proportions are known
+  ancestry_proportion.assign(2,0.5) ;
+  
+  /// time is not fixed by default, pulse of 1 into 0
+  /// does not matter, really since 0>1 would be identical in formulation
+  ancestry_pulses[0].time = 3000 ;
+  ancestry_pulses[0].time_fixed = true ;
+  ancestry_pulses[1].time = 10 ;
+  ancestry_pulses[1].time_fixed = false ;
 
-    /// end parameter this will be in lnl units
-    /// i.e. must obtain <= this amount of improvement between all vertices to quit
-    tolerance = 1e-5 ;
-    
-    /// restart number
-    n_restarts = -1 ;
+  /// end parameter this will be in lnl units
+  /// i.e. must obtain <= this amount of improvement between all vertices to quit
+  tolerance = 1e-5 ;
+  
+  /// restart number
+  n_restarts = -1 ;
 
-    /// per site per read error rate
-    error_rate = 0.01 ;
-    
-    /// genotype data rather than read data?
-    genotype = false ;
+  /// per site per read error rate
+  error_rate = 0.01 ;
+  
+  /// genotype data rather than read data?
+  genotype = false ;
 
-    // viterbi
-    viterbi = false ;
-    
-    /// output pulses rather than ancestry counts
-    output_pulses = true ;
-    
-    /// set output precision
-    precision = 10 ;
-    
-    /// sample file
-    sample_file = "null" ;
-    
-    // intput file
-    input_file = "null" ;
-    
-    /// bootstraps
-    n_bootstraps = 0 ;
-    block_size = 0 ;
+  // viterbi
+  viterbi = false ;
+  
+  /// output pulses rather than ancestry counts
+  output_pulses = true ;
+  
+  /// set output precision
+  precision = 10 ;
+  
+  /// sample file
+  sample_file = "null" ;
+  
+  // intput file
+  input_file = "null" ;
+  
+  /// bootstraps
+  n_bootstraps = 0 ;
+  block_size = 0 ;
+
+  // IBD relevent parameters
+  ibd = false;
     
 	/// accept command line parameters
 	for (int i=1; i<argc; i++) {
@@ -153,6 +155,11 @@ void cmd_line::read_cmd_line ( int argc, char *argv[] ) {
             precision = atoi(argv[++i]) ;
             cout.precision(precision) ;
             cerr.precision(precision) ;
+        }
+        
+        // IBD relevent parameters
+        if ( strcmp(argv[i],"--ibd") == 0 ) {
+            ibd = true ;
         }
         
         if ( strcmp(argv[i],"-v") == 0 ) {

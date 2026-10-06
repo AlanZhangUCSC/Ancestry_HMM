@@ -34,6 +34,9 @@ void print_usage() {
     cerr << "\t\t--pmax [int]\t\tmaximum proportion ancestry in an admixture pulse" << endl ;
     cerr << "\t\t--pmin [int]\t\tminimum proportion ancestry in an admixture pulse" << endl ;
     
+    /// IBD relevent parameters
+    cerr << "\tancestry-IBD model (pools / polyploids; two ancestries, one admixture pulse for now):" << endl ;
+    cerr << "\t\t--ibd\t\t\tmodel IBD among the sampled chromosomes (requires -a 2 and two -p pulses)" << endl ;
 }
 
 #endif

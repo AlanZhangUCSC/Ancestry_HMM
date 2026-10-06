@@ -67,6 +67,9 @@ public:
     /// bootstrap
     int n_bootstraps ;
     int block_size ; 
+
+    /// IBD relevent parameters
+    bool ibd;
     
     /// read relevant information
     void read_cmd_line ( int argc, char *argv[] ) ;
