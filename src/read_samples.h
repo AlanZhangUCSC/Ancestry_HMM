@@ -1,7 +1,7 @@
 #ifndef __READ_SAMPLES_H
 #define __READ_SAMPLES_H
 
-void read_samples( vector<markov_chain> &markov_chain_information, string &input_file, bool viterbi ) {
+void read_samples( vector<markov_chain> &markov_chain_information, string &input_file, bool viterbi) {
 
     ifstream in ( input_file.c_str() ) ;
     while ( !in.eof() ) {
@@ -52,6 +52,11 @@ void read_samples( vector<markov_chain> &markov_chain_information, string &input
     for ( int m = 0 ; m < markov_chain_information.size() ; m ++ ) {
         markov_chain_information[m].end_prob = 1 ;
         markov_chain_information[m].start_prob = 1 ;
+    }
+
+    if (markov_chain_information.size() == 0) {
+      std::cerr << "No samples in " << input_file << std::endl;
+      exit(1);
     }
     
     return ;

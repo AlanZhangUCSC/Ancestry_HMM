@@ -85,7 +85,7 @@ int main ( int argc, char *argv[] ) {
   
   /// get sample ids and ploidy from input file
   cerr << "\t\t\t\t" << (double) (clock() - t) << " ms\n" << "reading sample ids and ploidy" ; t = clock();
-  read_samples( markov_chain_information, options.sample_file, options.viterbi ) ;
+  read_samples( markov_chain_information, options.sample_file, options.viterbi) ;
 
   /// create states matrix
   cerr << "\t\t\t" << (double) (clock() - t) << " ms\n" << "creating states matrix" ; t = clock();
