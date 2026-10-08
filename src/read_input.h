@@ -155,8 +155,9 @@ public:
   std::vector<double> dist;               // Morgans from the previous retained site of the same chromosome
   std::vector<size_t> block_start;        // first site of each chromosome, plus a final sentinel = n_sites
   std::vector<double> ref;                // 4 per site for 2 ancestry populations: C0A, C0a, C1A, C1a
-  std::vector<double> err1, err2;
-  std::vector<std::vector<double> > counts;   /// counts[sample][2*site + {0,1}] = (A, a)
+  std::vector<double> err1;
+  std::vector<double> err2;
+  std::vector<std::vector<double> > counts;   // counts[sample][2*site + {0,1}] = (A, a)
 
   size_t n_sites() const { return pos.size(); }
   size_t n_blocks() const { return block_start.empty() ? 0 : block_start.size() - 1; }

@@ -78,6 +78,17 @@ void cmd_line::read_cmd_line ( int argc, char *argv[] ) {
 
   // IBD relevent parameters
   ibd = false;
+  ibd_mc = 1000;          // Monte Carlo genealogies per IBD partition
+  ibd_seed = 216769420;   // default using culturally significant numbers
+  int ibd_max_coal = -1;  // keep states with at most this many within-pool coalescences (-1: all)
+  int ibd_max_states = std::numeric_limits<int>::max();  // automatic truncation if the full state space is larger
+  bool ibd_no_symmetrize = false;   // use the raw Monte Carlo generator (no reversible projection)
+  int ibd_method = -1;              // propagation: -1 auto, 0 eigen, 1 uniformization
+  bool ibd_full_posterior = false;  // write the posterior of every colored IBD state
+  string ibd_write_q = "";          // write states, pi and Q to this file
+  double ibd_cache_mb = 2048;       // memory budget for precomputed emissions
+  double ibd_t_tol = 1e-6;          // golden-section tolerance on log(t)
+  int ibd_precision = 6;            // digits in --ibd output files
     
 	/// accept command line parameters
 	for (int i=1; i<argc; i++) {
@@ -157,11 +168,6 @@ void cmd_line::read_cmd_line ( int argc, char *argv[] ) {
             cerr.precision(precision) ;
         }
         
-        // IBD relevent parameters
-        if ( strcmp(argv[i],"--ibd") == 0 ) {
-            ibd = true ;
-        }
-        
         if ( strcmp(argv[i],"-v") == 0 ) {
             viterbi = true ;
         }
@@ -223,6 +229,44 @@ void cmd_line::read_cmd_line ( int argc, char *argv[] ) {
         }
         if ( strcmp(argv[i],"--fix") == 0 ) {
             ancestral_fixed = true ;
+        }
+
+        // IBD relevent parameters
+        if ( strcmp(argv[i],"--ibd") == 0 ) {
+          ibd = true ;
+        }
+        if ( strcmp(argv[i],"--ibd-mc") == 0 ) {
+          ibd_mc = atoi(argv[++i]) ;
+        }
+        if ( strcmp(argv[i],"--ibd-seed") == 0 ) {
+          ibd_seed = atoi(argv[++i]) ;
+        }
+        if ( strcmp(argv[i],"--ibd-max-coal") == 0 ) {
+          ibd_max_coal = atoi(argv[++i]) ;
+        }
+        if ( strcmp(argv[i],"--ibd-max-states") == 0 ) {
+          ibd_max_states = atoi(argv[++i]) ;
+        }
+        if ( strcmp(argv[i],"--ibd-no-symmetrize") == 0 ) {
+          ibd_no_symmetrize = true ;
+        }
+        if ( strcmp(argv[i],"--ibd-method") == 0 ) {
+          ibd_method = atoi(argv[++i]) ;
+        }
+        if ( strcmp(argv[i],"--ibd-full-posterior") == 0 ) {
+          ibd_full_posterior = true ;
+        }
+        if ( strcmp(argv[i],"--ibd-write-q") == 0 ) {
+          ibd_write_q = string(argv[++i]) ;
+        }
+        if ( strcmp(argv[i],"--ibd-cache-mb") == 0 ) {
+          ibd_cache_mb = atof(argv[++i]) ;
+        }
+        if ( strcmp(argv[i],"--ibd-t-tol") == 0 ) {
+          ibd_t_tol = atof(argv[++i]) ;
+        }
+        if ( strcmp(argv[i],"--ibd-precision") == 0 ) {
+          ibd_precision = atoi(argv[++i]) ;
         }
     }
     
