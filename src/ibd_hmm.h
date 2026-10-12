@@ -4,6 +4,7 @@
 #include "ibd_utils.h"
 #include "ibd_partitions.h"
 #include "ibd_emissions.h"
+#include "ibd_rate_matrix.h"
 #include "cmd_line.h"
 
 namespace ibd {
@@ -55,6 +56,8 @@ public:
   emission_model em;
   std::vector<int> samples;
   // need to add transition matrix and stuff
+  rate_model rm;
+  arma::vec pi;
   bool cached;
   std::vector<std::vector<arma::mat>> ecache;             // emission cache: [block][member] S x Lb
   std::vector<std::vector<std::vector<double>>> ccache;   // emission log scale cache: [block][member][site]
@@ -75,8 +78,24 @@ class ibd_model {
    ibd_model() : data(nullptr), current_t(-1), n_bad_sites(0) {}
 
    void setup(const ibd_data &data, const ibd_settings &set, const std::vector<markov_chain> &markov_chain_information);
+   void set_time(double t);
+   double log_likelihood();
    void block_emissions(ploidy_group &group, size_t block_index, size_t member_index, arma::mat& emission, std::vector<double>& log_scalers);
+   const arma::mat &get_emissions(ploidy_group &group, size_t block_index, size_t member_index, arma::mat& tmp, std::vector<double>& Ctmp, const std::vector<double>*& C);
 };
+
+void ibd_model::set_time(double t) {
+  current_t = t;
+  for (auto &group : groups) {
+    group.rm.build(group.sp, t, set.two_N, set.m, set.mc_samples, set.seed, set.symmetrize, false);
+    // propagate
+  }
+}
+
+double ibd_model::log_likelihood() {
+  //fill
+  return 0.0;
+}
 
 void ibd_model::setup(const ibd_data &data, const ibd_settings &set, const std::vector<markov_chain> &markov_chain_information) {
   this->data = &data;
@@ -105,10 +124,19 @@ void ibd_model::setup(const ibd_data &data, const ibd_settings &set, const std::
     if (max_coal < 0 && full_state_space_size(group.ploidy) > set.max_states) {
       // truncate genealogy to at most max_coal within-pool coalescences
       max_coal = 0;
-      while (max_coal + 1 <= group.ploidy - 1 && truncated_state_space_size(group.ploidy, max_coal + 1) <= (size_t) set.max_states) max_coal++ ;
+      while (max_coal + 1 <= group.ploidy - 1 && truncated_state_space_size(group.ploidy, max_coal + 1) <= (size_t) set.max_states) max_coal++;
       std::cerr << "\t[ibd] ploidy " << group.ploidy << ": full state space has " << full_state_space_size(group.ploidy)
-                << " states; truncating to at most " << max_coal << " within-pool coalescences (use --ibd-max-coal to change)\n" ;
+                << " states; truncating to at most " << max_coal << " within-pool coalescences (use --ibd-max-coal to change)\n";
     }
+
+    group.sp.build(group.ploidy, max_coal);
+    group.em.init(group.sp);
+    if (set.verbose) {
+      std::cerr << "\t[ibd] ploidy " << group.ploidy << ": " << group.samples.size() << " sample(s), "
+      << group.sp.partitions.size() << " IBD partitions, " << group.sp.size() << " colored states"
+      << " (max within-pool coalescences " << group.sp.max_coal << ")\n";
+    } 
+
   }
 
   // emission cache if it fits
@@ -131,12 +159,12 @@ void ibd_model::setup(const ibd_data &data, const ibd_settings &set, const std::
   }
 
   if (set.verbose) {
-    std::cerr << "\t[ibd] emissions " << (cache ? "precomputed" : "computed on the fly") << " (" << need / 1048576.0 << " MB)\n" ;
+    std::cerr << "\t[ibd] emissions " << (cache ? "precomputed" : "computed on the fly") << " (" << need / 1048576.0 << " MB)\n";
   }
 }
 
 void ibd_model::block_emissions(ploidy_group &group, size_t block_index, size_t member_index, arma::mat& emission, std::vector<double>& log_scalers) {
-  const ibd_data& d = *data ;
+  const ibd_data& d = *data;
   size_t v0 = d.block_start[block_index];
   size_t v1 = d.block_start[block_index+1];
   int sample = group.samples[member_index];

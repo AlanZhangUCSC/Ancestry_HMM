@@ -89,6 +89,30 @@ inline double log_choose(double n, double k) {
   return std::lgamma(n + 1.0) - std::lgamma(k + 1.0) - std::lgamma(n - k + 1.0);
 }
 
+// uniform(0,1) strictly inside the open interval
+template <class RNG>
+inline double open_uniform(RNG &rng) {
+    /// 53 random bits, shifted by half a step so that 0 and 1 are excluded
+    uint64_t r = rng() >> 11;
+    return ((double) r + 0.5) * (1.0 / 9007199254740992.0);
+}
+
+// uniform integer in [0, k)
+template <class RNG>
+inline int uniform_index(RNG &rng, int k) {
+    int i = (int) (open_uniform(rng) * k);
+    return (i < k) ? i : k - 1;
+}
+
+inline double phi_x(double x) {
+  if (x < 1e-2) {
+      /// x^2/2 - x^3/6 + x^4/24 - x^5/120 + x^6/720 - x^7/5040
+      double x2 = x * x;
+      return x2 * (0.5 - x * (1.0/6.0 - x * (1.0/24.0 - x * (1.0/120.0 - x * (1.0/720.0 - x / 5040.0)))));
+  }
+  return x + std::expm1(-x);
+}
+
 }
 
 #endif

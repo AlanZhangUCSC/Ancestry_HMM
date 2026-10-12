@@ -73,7 +73,7 @@ public:
 
 class state_space {
 public:
-    int n;
+    int n;  // ploidy 
     int max_coal;
     size_t full_size;                                   /// size of the untruncated state space
     std::vector<std::vector<int> > partitions;          /// retained uncolored partitions of n

@@ -3,6 +3,7 @@
 
 #include "ibd_utils.h"
 #include "ibd_hmm.h"
+#include "ibd_golden_search.h"
 
 int run_ancestry_ibd(cmd_line &options) {
   std::cout << "Running ancestry-IBD model" << std::endl;
@@ -32,6 +33,21 @@ int run_ancestry_ibd(cmd_line &options) {
   std::cerr << "\t\t\t\t" << (double) (clock() - t) << " ms\n" << "initializing IBD model"; t = clock();
   ibd::ibd_model model;
   model.setup(data, set, markov_chain_information);
+
+  // Estimate admixture time
+  int adm = (options.ancestry_pulses[0].time < options.ancestry_pulses[1].time) ? 0 : 1;
+  bool estimate_t = !options.ancestry_pulses[adm].time_fixed;
+  if (estimate_t) {
+    std::cerr << "\t\t\t\t" << (double) (clock() - t) << " ms\n" << "estimating admixture time"; t = clock();
+    int adm = (options.ancestry_pulses[0].time < options.ancestry_pulses[1].time) ? 0 : 1;
+    double t0 = options.ancestry_pulses[adm].time;
+    double t_hat = t0;
+    double lnl = 0;
+
+    std::cerr << "\t[ibd] golden-section search for t on log scale in [" << options.t_min << ", " << options.t_max << "]\n";
+    t_hat = ibd::golden_section(model, options.t_min, options.t_max, options.tolerance, options.ibd_t_tol, lnl);
+  }
+
 
 
   std::cerr << "total run time:\t\t\t" << (double) (clock() - total) << " ms" << endl;
