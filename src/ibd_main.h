@@ -39,7 +39,6 @@ int run_ancestry_ibd(cmd_line &options) {
   bool estimate_t = !options.ancestry_pulses[adm].time_fixed;
   if (estimate_t) {
     std::cerr << "\t\t\t\t" << (double) (clock() - t) << " ms\n" << "estimating admixture time"; t = clock();
-    int adm = (options.ancestry_pulses[0].time < options.ancestry_pulses[1].time) ? 0 : 1;
     double t0 = options.ancestry_pulses[adm].time;
     double t_hat = t0;
     double lnl = 0;

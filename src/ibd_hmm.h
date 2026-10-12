@@ -57,6 +57,7 @@ public:
   std::vector<int> samples;
   // need to add transition matrix and stuff
   rate_model rm;
+  propagator prop;
   arma::vec pi;
   bool cached;
   std::vector<std::vector<arma::mat>> ecache;             // emission cache: [block][member] S x Lb
@@ -88,7 +89,8 @@ void ibd_model::set_time(double t) {
   current_t = t;
   for (auto &group : groups) {
     group.rm.build(group.sp, t, set.two_N, set.m, set.mc_samples, set.seed, set.symmetrize, false);
-    // propagate
+    group.prop.force_method = set.symmetrize ? set.force_method : 1;
+    group.prop.build(group.rm.Q, group.rm.logpi, set.symmetrize && set.force_method != 1);
   }
 }
 
