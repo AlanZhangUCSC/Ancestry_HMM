@@ -39,7 +39,7 @@ public:
     eigen_allowed = allow_eigen;
     U.reset();
     lambda.reset();
-    n_states = (int) Q.n_rows;
+    n_states = (int) _Q.n_rows;
     sqrtpi.set_size(n_states);
     isqrtpi.set_size(n_states);
 
@@ -57,10 +57,10 @@ public:
     // construct the uniformization matrix P = I + Q/Lambda
     Lambda = 0;
     for (int i = 0; i < n_states; i++) {
-      Lambda = std::max(Lambda, -Q(i,i));
+      Lambda = std::max(Lambda, -_Q(i,i));
     }
     Lambda = (Lambda > 0) ? Lambda * (1.0 + 1e-12) : 1.0;
-    arma::mat Pd = Q / Lambda;
+    arma::mat Pd = _Q / Lambda;
     Pd.diag() += 1.0;
     Pd.elem(arma::find(Pd < 0)).zeros();
     P = arma::sp_mat(Pd);
@@ -68,7 +68,7 @@ public:
     nnz = (double) P.n_nonzero;
   }
 
-  void get_eigen() {
+  void set_eigen() {
     if (U.n_elem > 0) return; // already computed
 
     arma::mat Sm(n_states, n_states, arma::fill::zeros); // symmetric_rate_matrix
@@ -80,8 +80,8 @@ public:
           Sm(i, j) = q;
           continue;
         }
-        if (q > 0 && lpi[i] != NEG_INF && lpi[j] != NEGINF) {
-          Sm(i, j) = std::exp(std::log(q) + 0.5 * (lpi[i] - lpi[j]));
+        if (q > 0 && logpi[i] != NEG_INF && logpi[j] != NEG_INF) {
+          Sm(i, j) = std::exp(std::log(q) + 0.5 * (logpi[i] - logpi[j]));
         }
       }
     }
@@ -94,13 +94,13 @@ public:
   }
 
   // force uniformation upper bound. A heuristic, not exact calculation.
-  int unif_upper_bound(double mu) {
+  static int unif_upper_bound(double mu) {
       if (mu <= 0) return 0;
       return (int) std::ceil(mu + 8.5 * std::sqrt(mu) + 12.0);
   }
 
   // estimate the cost of uniformization. Heuristic again.
-  double unif_cost(double mu) {
+  static double unif_cost(double mu) {
     if (mu <= 0)  return 0;
     if (mu <= 50) return mu + 6.0 * std::sqrt(mu) + 8.0;
     return unif_upper_bound(mu);
@@ -114,7 +114,7 @@ public:
     double cost_unif  = (unif_cost(Lambda * d) + 1.0) * 2.0 * nnz;
     double cost_eigen = 4.0 * (double) n_states * (double) n_states;
 
-    if (U.n_elem == 0) cost_eigen += 10.0 * (double) S * S * S / std::max(1.0, amortize_steps);
+    if (U.n_elem == 0) cost_eigen += 10.0 * (double) n_states * n_states * n_states / std::max(1.0, amortize_steps);
 
     return (cost_unif <= cost_eigen) ? 1 : 0;
   }
@@ -162,9 +162,72 @@ public:
   // propagate state probs forward
   void forward(arma::mat& X, double d, std::vector<int>& method) {
     method.assign(X.n_cols, 0);
+    if (d <= 0) return; // distance is zero, nothing to do
+
+    int pref = preferred_method(d);
+
+    // uniformization method
+    if (pref == 1) {
+      unif_prop(Pt, X, Lambda * d);
+      for (size_t i = 0; i < X.n_cols; i++) method[i] = 1;
+      n_unif += X.n_cols;
+      return;
+    }
+
+    // eigen method
+    set_eigen();
+    arma::mat Y = X.each_col() % isqrtpi;
+    std::vector<arma::uword> risky;
+    if (force_method != 0) {
+      // check for risky columns
+      for (arma::uword i = 0; i < X.n_cols; i++) {
+        double colsum = arma::accu(Y.col(i));
+        double ymax   = arma::abs(Y.col(i)).max();
+        double risk   = 2.2e-16 * n_states * ymax * sqrtpi_max / std::max(colsum, 1e-300);
+        if (risk > risk_tol) risky.push_back(i);
+      }
+    }
+
+    arma::mat Z = U.t() * Y;
+    Z.each_col() %= arma::exp(d * lambda);
+    arma::mat W = U * Z;
+    W.each_col() %= sqrtpi;
+    clean_nonneg(W);
+    n_eigen += X.n_cols - risky.size();
+
+    for (size_t r = 0; r < risky.size(); r++) {
+      arma::mat x = X.col(risky[r]);
+      unif_prop(Pt, x, Lambda * d);
+      W.col(risky[r]) = x;
+      method[risky[r]] = 1;
+      n_fallback++;
+    }
+
+    X = W;
   }
 
+  // propagate state probs backward
+  void backward(arma::vec& b, double d, int method) {
+    if (d <= 0) return; // distance is zero, nothing to do
+    
+    // uniformization method
+    if (method == 1 || !eigen_allowed) {
+      arma::mat B(b);
+      unif_prop(P, B, Lambda * d);
+      b = B.col(0);
+      return;
+    }
 
+    // eigen method
+    set_eigen();
+    arma::vec y = b % sqrtpi;
+    arma::vec z = U.t() * y;
+    z %= arma::exp(d * lambda);
+    arma::vec w = U * z;
+    w %= isqrtpi;
+    w.elem(arma::find(w < 0)).zeros();
+    b = w;
+  }
 };
 
 }

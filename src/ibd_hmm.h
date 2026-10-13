@@ -5,6 +5,7 @@
 #include "ibd_partitions.h"
 #include "ibd_emissions.h"
 #include "ibd_rate_matrix.h"
+#include "ibd_propagator.h"
 #include "cmd_line.h"
 
 namespace ibd {
