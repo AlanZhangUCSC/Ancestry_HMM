@@ -7,6 +7,7 @@
 #include "ibd_rate_matrix.h"
 #include "ibd_propagator.h"
 #include "cmd_line.h"
+#include <iomanip>
 
 namespace ibd {
 
@@ -84,6 +85,8 @@ class ibd_model {
    double log_likelihood();
    void block_emissions(ploidy_group &group, size_t block_index, size_t member_index, arma::mat& emission, std::vector<double>& log_scalers);
    const arma::mat &get_emissions(ploidy_group &group, size_t block_index, size_t member_index, arma::mat& tmp, std::vector<double>& Ctmp, const std::vector<double>*& C);
+   void decode_posterior();
+   void write_rate_matrices(const std::string &file) const;
 };
 
 void ibd_model::set_time(double t) {
@@ -253,6 +256,120 @@ const arma::mat& ibd_model::get_emissions(
   block_emissions(group, block_index, member_index, tmp, Ctmp);
   C = &Ctmp;
   return tmp;
+}
+
+void ibd_model::decode_posterior() {
+  const ibd_data &d = *data;
+  for (auto& group : groups) {
+    const int S = (int) group.sp.size();
+    const int n = group.ploidy;
+    for (size_t j = 0; j < group.samples.size(); j++) {
+      int sample = group.samples[j];
+      std::string base = sample_prefix[sample];
+      std::ofstream out((base + ".posterior").c_str());
+      std::ofstream sum((base + ".ibd_summary").c_str());
+      std::ofstream full;
+      if (set.full_posterior) full.open((base + ".ibd_posterior").c_str());
+      out.precision(set.precision);
+      sum.precision(set.precision);
+      full.precision(set.precision);
+
+      /// headers: local ancestry counts in the same order as ancestry_hmm (n,0  n-1,1 ... 0,n)
+      out << "chrom\tposition";
+      for (int k = n; k >= 0; k --) out << "\t" << k << "," << n - k;
+      out << "\n";
+      sum << "chrom\tposition\tE_K0\tE_K1\tE_K\tP_no_IBD\n";
+      if (set.full_posterior) {
+        full << "chrom\tposition";
+        for (int s = 0; s < S; s++) full << "\t" << group.sp.states[s].label;
+        full << "\n";
+      }
+
+      double lnl = 0;
+      for (size_t b = 0; b < d.n_blocks(); b++) {
+        size_t v0 = d.block_start[b], v1 = d.block_start[b+1], L = v1 - v0;
+        arma::mat tmpE;
+        std::vector<double> tmpC;
+        const std::vector<double> *C;
+        const arma::mat &E = get_emissions(group, b, j, tmpE, tmpC, C);
+
+        /// forward pass, storing alphas and the propagation method of every step
+        arma::mat A(S, L);
+        std::vector<int> meth(L, 0), mtmp;
+        arma::mat x(S, 1);
+        for (size_t i = 0; i < L; i++) {
+          if (i == 0) x.col(0) = group.pi;
+          else {
+            group.prop.forward(x, d.dist[v0 + i], mtmp);
+            meth[i] = mtmp[0];
+          }
+          x.col(0) %= E.col(i);
+          double s = arma::accu(x);
+          if (!(s > 0) || !std::isfinite(s)) {
+            n_bad_sites++;
+            x.col(0) = group.pi % E.col(i);
+            s = arma::accu(x);
+          }
+          x /= s;
+          lnl += std::log(s) + (*C)[i];
+          A.col(i) = x.col(0);
+        }
+
+        /// backward pass and posteriors
+        arma::mat marg(n + 1, L), summ(4, L);
+        arma::mat fullp;
+        if (set.full_posterior) fullp.set_size(S, L);
+        arma::vec beta(S, arma::fill::ones);
+        for (size_t ii = L; ii-- > 0;) {
+          arma::vec post = A.col(ii) % beta;
+          double s = arma::accu(post);
+          if (s > 0) post /= s;
+          arma::vec mg(n + 1, arma::fill::zeros);
+          double eK0 = 0, eK1 = 0, pno = 0;
+          for (int st = 0; st < S; st++) {
+            const colored_state &cs = group.sp.states[st];
+            mg(cs.N0) += post(st);
+            eK0 += post(st) * cs.K0;
+            eK1 += post(st) * cs.K1;
+            if (cs.K0 + cs.K1 == n) pno += post(st);
+          }
+          marg.col(ii) = mg;
+          summ(0, ii) = eK0;
+          summ(1, ii) = eK1;
+          summ(2, ii) = eK0 + eK1;
+          summ(3, ii) = pno;
+          if (set.full_posterior) fullp.col(ii) = post;
+          if (ii > 0) {
+            arma::vec bb = beta % E.col(ii);
+            group.prop.backward(bb, d.dist[v0 + ii], meth[ii]);
+            double mx = bb.max();
+            if (mx > 0 && std::isfinite(mx)) bb /= mx;
+            else bb.ones();
+            beta = bb;
+          }
+        }
+
+        for (size_t i = 0; i < L; i++) {
+          size_t v = v0 + i;
+          out << d.chrom[v] << "\t" << d.pos[v];
+          for (int k = n; k >= 0; k --) out << "\t" << marg(k, i);
+          out << "\n";
+          sum << d.chrom[v] << "\t" << d.pos[v] << "\t" << summ(0, i) << "\t" << summ(1, i) << "\t" << summ(2, i) << "\t" << summ(3, i) << "\n";
+          if (set.full_posterior) {
+            full << d.chrom[v] << "\t" << d.pos[v];
+            for (int st = 0; st < S; st++) full << "\t" << fullp(st, i);
+            full << "\n";
+          }
+        }
+      }
+      if (set.verbose) std::cerr << "\t[ibd] sample " << base << " (ploidy " << n << "): lnL " << std::setprecision(12) << lnl << "\n";
+    }
+  }
+}
+
+void ibd_model::write_rate_matrices(const std::string &file) const {
+  std::ofstream out(file.c_str());
+  for (const auto &group : groups) group.rm.write(group.sp, out);
 }
 
 }

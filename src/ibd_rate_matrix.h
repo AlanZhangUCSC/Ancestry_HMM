@@ -237,6 +237,31 @@ void rate_model::build(const state_space& sp, double t_, double two_N_, double m
     Q(i,i) = -arma::accu(Q.row(i));
   }
 }
+
+void rate_model::write(const state_space& sp, std::ostream& out) const {
+  const int stats_space_size = (int) sp.size();
+  out.precision(12);
+  out << "#ancestry_ibd_rate_matrix\n";
+  out << "#n\t" << n << "\n#t\t" << t << "\n#two_N\t" << two_N << "\n#tau\t" << tau << "\n#m\t" << m << "\n";
+  out << "#mc_samples\t" << mc_samples << "\n#seed\t" << seed << "\n#max_coal\t" << sp.max_coal << "\n";
+  out << "#states\t" << stats_space_size << "\n#full_state_space\t" << sp.full_size << "\n#retained_pi_mass\t" << retained_mass << "\n";
+  out << "#identity_error\t" << identity_error << "\n#stationarity_error_raw\t" << stationarity_error << "\n";
+  out << "#detailed_balance_asymmetry_raw\t" << detailed_balance_asym << "\n#symmetrized\t" << (symmetrized ? 1 : 0) << "\n";
+  out << "STATE\tindex\tlabel\tN0\tN1\tK0\tK1\tlog_pi\n";
+  for (int s = 0; s < stats_space_size; s ++) {
+    const colored_state &st = sp.states[s];
+    out << "STATE\t" << s << "\t" << st.label << "\t" << st.N0 << "\t" << st.N1 << "\t" << st.K0 << "\t" << st.K1 << "\t" << logpi[s] << "\n";
+  }
+  out << "RATE\tfrom\tto\tQ_raw\tQ_used\n";
+  for (int s = 0; s < stats_space_size; s ++) {
+    for (int s2 = 0; s2 < stats_space_size; s2 ++) {
+      if (s == s2) continue;
+      if (Q_raw(s, s2) != 0 || Q(s, s2) != 0) {
+        out << "RATE\t" << s << "\t" << s2 << "\t" << Q_raw(s, s2) << "\t" << Q(s, s2) << "\n";
+      }
+    }
+  }
+}
   
 }
 
