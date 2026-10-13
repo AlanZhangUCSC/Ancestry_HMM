@@ -3,40 +3,52 @@
 
 void print_usage() {
     
-    cerr << endl << endl << "ancestry_hmm usage:" << endl << endl ;
-    cerr << "\trequired:" << endl ;
-    cerr << "\t\t-i [string]\t\tinput file name" << endl ;
-    cerr << "\t\t-s [string]\t\tsample id and ploidy file" << endl ;
-    cerr << "\t\t-a [int] [float] [float] ..." << endl ;
-    cerr << "\t\t\tnumber of ancestral populations and ancestry proportion attributable to each" << endl ;
-    cerr << "\t\t-p [int] [int] [float]" << endl ;
-    cerr << "\t\t\tancestry pulse with format, ancestral population, time," << endl ;
-    cerr << "\t\t\tand proportion of final ancestry from this pulse" << endl ;
-    cerr << "\t\t\tnegative time or proportions indicate that parameters are to be estimated" << endl << endl ;
+    cerr << endl << endl << "ancestry_hmm usage:" << endl << endl;
+    cerr << "\trequired:" << endl;
+    cerr << "\t\t-i [string]\t\tinput file name" << endl;
+    cerr << "\t\t-s [string]\t\tsample id and ploidy file" << endl;
+    cerr << "\t\t-a [int] [float] [float] ..." << endl;
+    cerr << "\t\t\tnumber of ancestral populations and ancestry proportion attributable to each" << endl;
+    cerr << "\t\t-p [int] [int] [float]" << endl;
+    cerr << "\t\t\tancestry pulse with format, ancestral population, time," << endl;
+    cerr << "\t\t\tand proportion of final ancestry from this pulse" << endl;
+    cerr << "\t\t\tnegative time or proportions indicate that parameters are to be estimated" << endl << endl;
     
-    cerr << "\toptional:" << endl ;
-    cerr << "\t\t--help\t\t\tprint this help statement" << endl ;
-    cerr << "\t\t--ne [int]\t\teffective population size of the admixed population" << endl ;
-    cerr << "\t\t-g\t\t\tsamples are specified with genotypes rather than read counts" << endl ;
-    cerr << "\t\t--precision [int]\tmodify float and double precision to int" << endl ;
-    cerr << "\t\t-v\t\t\tviterbi decoding" << endl ;
-    cerr << "\t\t-b [int] [int]\t\tnumber of bootstraps and bootstrap block size in number of SNPs" << endl ;
-    cerr << "\t\t--tmax [int]\t\tmaximum time of an admixture pulse" << endl ;
-    cerr << "\t\t--tmin [int]\t\tminimum time of an admixture pulse" << endl ;
-    cerr << "\t\t--tolerance [float]\tdistance in lnL units to just convergence" << endl ;
-    cerr << "\t\t-e [float]\t\terror rates" << endl ;
-    cerr << "\t\t-E\t\t\tsite specific error rates are included" << endl ;
-    cerr << "\t\t--fix\t\t\tancestral allele frequencies are certain" << endl << endl ;
+    cerr << "\toptional:" << endl;
+    cerr << "\t\t--help\t\t\tprint this help statement" << endl;
+    cerr << "\t\t--ne [int]\t\teffective population size of the admixed population" << endl;
+    cerr << "\t\t-g\t\t\tsamples are specified with genotypes rather than read counts" << endl;
+    cerr << "\t\t--precision [int]\tmodify float and double precision to int" << endl;
+    cerr << "\t\t-v\t\t\tviterbi decoding" << endl;
+    cerr << "\t\t-b [int] [int]\t\tnumber of bootstraps and bootstrap block size in number of SNPs" << endl;
+    cerr << "\t\t--tmax [int]\t\tmaximum time of an admixture pulse" << endl;
+    cerr << "\t\t--tmin [int]\t\tminimum time of an admixture pulse" << endl;
+    cerr << "\t\t--tolerance [float]\tdistance in lnL units to just convergence" << endl;
+    cerr << "\t\t-e [float]\t\terror rates" << endl;
+    cerr << "\t\t-E\t\t\tsite specific error rates are included" << endl;
+    cerr << "\t\t--fix\t\t\tancestral allele frequencies are certain" << endl << endl;
     
-    cerr << "\toptional and relevant only for multiple pulse models:" << endl ;
-    cerr << "\t\t--output-ancestry\toutput ancestry posteriors rather than pulses" << endl ;
-    cerr << "\t\t-r [int]\t\tnumber of random restarts during nelder-mead optimization" << endl ;
-    cerr << "\t\t--pmax [int]\t\tmaximum proportion ancestry in an admixture pulse" << endl ;
-    cerr << "\t\t--pmin [int]\t\tminimum proportion ancestry in an admixture pulse" << endl ;
+    cerr << "\toptional and relevant only for multiple pulse models:" << endl;
+    cerr << "\t\t--output-ancestry\toutput ancestry posteriors rather than pulses" << endl;
+    cerr << "\t\t-r [int]\t\tnumber of random restarts during nelder-mead optimization" << endl;
+    cerr << "\t\t--pmax [int]\t\tmaximum proportion ancestry in an admixture pulse" << endl;
+    cerr << "\t\t--pmin [int]\t\tminimum proportion ancestry in an admixture pulse" << endl;
     
     /// IBD relevent parameters
-    cerr << "\tancestry-IBD model (pools / polyploids; two ancestries, one admixture pulse for now):" << endl ;
-    cerr << "\t\t--ibd\t\t\tmodel IBD among the sampled chromosomes (requires -a 2 and two -p pulses)" << endl ;
+    cerr << "\tancestry-IBD model (pools / polyploids; two ancestries, one admixture pulse for now):" << endl;
+    cerr << "\t\t--ibd\t\t\tmodel IBD among the sampled chromosomes (requires -a 2 and two -p pulses)" << endl;
+    cerr << "\t\t--ibd-mc [int]\t\tMonte Carlo genealogies per IBD partition (default: 1000)" << endl;
+    cerr << "\t\t--ibd-seed [int]\tseed for Monte Carlo IBD genealogies (default: 216769420)" << endl;
+    cerr << "\t\t--ibd-max-coal [int]\tmaximum within-pool coalescences allowed in states (-1: no limit)" << endl;
+    cerr << "\t\t--ibd-max-states [int]\tmaximum number of IBD colored states to use (default: no limit)" << endl;
+    cerr << "\t\t--ibd-no-symmetrize\tuse the raw Monte Carlo generator (no reversible projection)" << endl;
+    cerr << "\t\t--ibd-method [int]\tpropagation method: -1 auto, 0 eigen, 1 uniformization" << endl;
+    cerr << "\t\t--ibd-full-posterior\twrite the posterior of every colored IBD state" << endl;
+    cerr << "\t\t--ibd-write-q [string]\twrite states, stationary distribution, and Q matrix to this file" << endl;
+    cerr << "\t\t--ibd-cache-mb [float]\tmemory budget for precomputed IBD emissions (MB; default: 2048)" << endl;
+    cerr << "\t\t--ibd-t-tol [float]\tgolden-section search tolerance on log(t) (default: 1e-6)" << endl;
+    cerr << "\t\t--ibd-precision [int]\tdigits of precision in IBD output files (default: 6)" << endl;
+
 }
 
 #endif
