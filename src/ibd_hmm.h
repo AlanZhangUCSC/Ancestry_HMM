@@ -92,12 +92,58 @@ void ibd_model::set_time(double t) {
     group.rm.build(group.sp, t, set.two_N, set.m, set.mc_samples, set.seed, set.symmetrize, false);
     group.prop.force_method = set.symmetrize ? set.force_method : 1;
     group.prop.build(group.rm.Q, group.rm.logpi, set.symmetrize && set.force_method != 1);
+    group.prop.amortize_steps = (double) data->n_sites() * group.samples.size();
+    group.pi.set_size(group.sp.size());
+    for (size_t i = 0; i < group.sp.size(); i++) group.pi(i) = std::exp(group.rm.logpi[i]);
   }
 }
 
 double ibd_model::log_likelihood() {
-  //fill
-  return 0.0;
+  const ibd_data& d = *data;
+  double lnl = 0.0; // log likelihood
+  for (auto &group : groups) {
+    const int state_space_size = group.sp.size();
+    const size_t sample_size = group.samples.size();
+    std::vector<int> method;
+
+    std::vector<const arma::mat*> E(sample_size);
+    std::vector<arma::mat>        tmpE(sample_size);
+
+    std::vector<const std::vector<double>*> C(sample_size);
+    std::vector<std::vector<double>>        tmpC(sample_size);
+
+    for (size_t i = 0; i < d.n_blocks(); i++) {
+      size_t v0 = d.block_start[i];
+      size_t v1 = d.block_start[i+1];
+
+      for (size_t j = 0; j < sample_size; j++) {
+        E[j] = &get_emissions(group, i, j, tmpE[j], tmpC[j], C[j]);
+      }
+
+      arma::mat X(state_space_size, sample_size);
+      for (size_t v = v0; v < v1; v++) {
+        size_t vi = v - v0;
+        if (vi == 0) {
+          X.each_col() = group.pi;
+        } else {
+          group.prop.forward(X, d.dist[v], method);
+        }
+
+        for (size_t j = 0; j < sample_size; j++) {
+          X.col(j) %= E[j]->col(vi);
+          double s = arma::accu(X.col(j));
+          if (!(s > 0) || !std::isfinite(s)) {
+            n_bad_sites++;
+            X.col(j) = group.pi % E[j]->col(vi);
+            s = arma::accu(X.col(j));
+          }
+          X.col(j) /= s;
+          lnl += std::log(s) + (*C[j])[vi];
+        }
+      }
+    }
+  }
+  return lnl;
 }
 
 void ibd_model::setup(const ibd_data &data, const ibd_settings &set, const std::vector<markov_chain> &markov_chain_information) {
@@ -195,5 +241,19 @@ void ibd_model::block_emissions(ploidy_group &group, size_t block_index, size_t 
     log_scalers[v - v0] = lmax;
   }
 }
+
+const arma::mat& ibd_model::get_emissions(
+  ploidy_group &group, size_t block_index, size_t member_index,
+  arma::mat& tmp, std::vector<double>& Ctmp, const std::vector<double>*& C
+) {
+  if (group.cached) {
+    C = &group.ccache[block_index][member_index];
+    return group.ecache[block_index][member_index];
+  }
+  block_emissions(group, block_index, member_index, tmp, Ctmp);
+  C = &Ctmp;
+  return tmp;
+}
+
 }
 #endif
