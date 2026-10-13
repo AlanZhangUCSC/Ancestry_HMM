@@ -117,7 +117,7 @@ void rate_model::build(const state_space& sp, double t_, double two_N_, double m
         for (int k = 1; k <= c; k++) { // moving k chromosome copies out of a class of size c
 
           // case 1: moves into a distinct class (j2 , c2)
-          for (int j2 = 0; j2 <= 2; j2++) { // j2 is target ancestry index (0 or 1)
+          for (int j2 = 0; j2 < 2; j2++) { // j2 is target ancestry index (0 or 1)
             for (int c2 = 1; c2 <= n - c; c2++) { // c2 is target IBD-class size
               int num_transition_pairs = bjc * ((*b[j2])[c2] - ((j2 == j && c2 == c) ? 1 : 0));
               if (num_transition_pairs == 0) continue;
@@ -143,7 +143,7 @@ void rate_model::build(const state_space& sp, double t_, double two_N_, double m
           // case 2: no-coalescence before admixture time, new ancestry jstar
           double esc_rate = kernel.get_esc_rate(c, k);
           if (esc_rate <= 0) continue;
-          for (int jstar = 0; jstar <= 2; jstar++) {
+          for (int jstar = 0; jstar < 2; jstar++) {
             next_b0 = source_state.b0;
             next_b1 = source_state.b1;
             std::vector<int> *next_b[2] = {&next_b0, &next_b1};
@@ -187,7 +187,7 @@ void rate_model::build(const state_space& sp, double t_, double two_N_, double m
     double num = 0;
     double den = 0;
     for (int i = 0; i < num_states; i++) {
-      for (int j = 0; j < num_states; j++) {
+      for (int j = i + 1; j < num_states; j++) {
         double forward = pi(i) * Q_raw(i,j);
         double reverse = pi(j) * Q_raw(j,i);
         num += std::fabs(forward - reverse);

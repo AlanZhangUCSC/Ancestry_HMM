@@ -116,7 +116,7 @@ void accumulate_genealogy(
     int c = class_sizes[h]; // size of class h
     w.hist[h].assign(c, std::vector<int>(c + 1, 0));
     w.cur.assign(c, 1); // initialize to c separate lineages, each having one descendant sampled chromosome copy
-    w.hist[h][0][c] = c;  // initialize to c branches each substending one sampled chromosome copy
+    w.hist[h][0][1] = c;  // initialize to c branches each substending one sampled chromosome copy
     for (int e = 1; e < c; e++) {
       int L = (int) w.cur.size();  // active lineages
 
@@ -231,8 +231,8 @@ void accumulate_genealogy(
       for (int k = 0; k < n_intervals; k++) {
         for (int d = 1; d <= c; d++) {
           double l = (i < 0) ? 1.0 : w.hist[i][w.cnt[i][k]][d];
-          ident_lhs[d] += l * w.Delta[k];
-          ident_rhs[d] += l * w.Y[k];
+          ident_rhs[d] += l * w.Delta[k];
+          ident_lhs[d] += l * w.Y[k];
         }
       } 
     }
@@ -382,6 +382,7 @@ void compute_partition_kernels(
         }
       }
     }
+    ident[i] = accumulator.max_identity_error;
   }
 
   max_identity_error = 0.0;

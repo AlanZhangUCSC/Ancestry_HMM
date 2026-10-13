@@ -6,6 +6,7 @@
 #include "ibd_emissions.h"
 #include "ibd_rate_matrix.h"
 #include "ibd_propagator.h"
+#include "read_input.h"
 #include "cmd_line.h"
 #include <iomanip>
 
@@ -81,6 +82,7 @@ class ibd_model {
    ibd_model() : data(nullptr), current_t(-1), n_bad_sites(0) {}
 
    void setup(const ibd_data &data, const ibd_settings &set, const std::vector<markov_chain> &markov_chain_information);
+   void setup(const ibd_data &d, const std::vector<std::string>& sample_prefix, const std::vector<int>& sample_ploidy, const ibd_settings& set);
    void set_time(double t);
    double log_likelihood();
    void block_emissions(ploidy_group &group, size_t block_index, size_t member_index, arma::mat& emission, std::vector<double>& log_scalers);
@@ -157,6 +159,70 @@ void ibd_model::setup(const ibd_data &data, const ibd_settings &set, const std::
     sample_prefix.push_back(info.output_file);
     sample_ploidy.push_back(int(std::floor(info.number_chromosomes + 0.5)));
   }
+
+  // Group samples by ploidy
+  std::vector<int> sample_unique_ploidy = sample_ploidy;
+  std::sort(sample_unique_ploidy.begin(), sample_unique_ploidy.end());
+  sample_unique_ploidy.erase(std::unique(sample_unique_ploidy.begin(), sample_unique_ploidy.end()), sample_unique_ploidy.end());
+  groups.assign(sample_unique_ploidy.size(), ploidy_group());
+  for (size_t i = 0; i < sample_unique_ploidy.size(); i++) {
+    auto& group = groups[i];
+    group.ploidy = sample_unique_ploidy[i];
+    for (int j = 0; j < (int) sample_ploidy.size(); j++) {
+      if (sample_ploidy[j] == group.ploidy) {
+        group.samples.push_back(j);
+      }
+    }
+
+    int max_coal = set.max_coal;
+    if (max_coal < 0 && full_state_space_size(group.ploidy) > set.max_states) {
+      // truncate genealogy to at most max_coal within-pool coalescences
+      max_coal = 0;
+      while (max_coal + 1 <= group.ploidy - 1 && truncated_state_space_size(group.ploidy, max_coal + 1) <= (size_t) set.max_states) max_coal++;
+      std::cerr << "\t[ibd] ploidy " << group.ploidy << ": full state space has " << full_state_space_size(group.ploidy)
+                << " states; truncating to at most " << max_coal << " within-pool coalescences (use --ibd-max-coal to change)\n";
+    }
+
+    group.sp.build(group.ploidy, max_coal);
+    group.em.init(group.sp);
+    if (set.verbose) {
+      std::cerr << "\t[ibd] ploidy " << group.ploidy << ": " << group.samples.size() << " sample(s), "
+      << group.sp.partitions.size() << " IBD partitions, " << group.sp.size() << " colored states"
+      << " (max within-pool coalescences " << group.sp.max_coal << ")\n";
+    } 
+
+  }
+
+  // emission cache if it fits
+  double need = 0;
+  for (const auto& group : groups) {
+    need += 8.0 * double(group.sp.size() * data.n_sites() * group.samples.size());
+  }
+  bool cache = (need / 1048576.0 <= set.cache_mb);
+  for (auto& group : groups) {
+    group.cached = false;
+    if (!cache) continue;
+    group.ecache.assign(data.n_blocks(), std::vector<arma::mat>(group.samples.size()));
+    group.ccache.assign(data.n_blocks(), std::vector<std::vector<double>>(group.samples.size()));
+    for (size_t b = 0; b < data.n_blocks(); b++) {
+      for (size_t s = 0; s < group.samples.size(); s++) {
+        block_emissions(group, b, s, group.ecache[b][s], group.ccache[b][s]); // construct emission and log scalers for block/chromosome b and sample s
+      }
+    }
+    group.cached = true;
+  }
+
+  if (set.verbose) {
+    std::cerr << "\t[ibd] emissions " << (cache ? "precomputed" : "computed on the fly") << " (" << need / 1048576.0 << " MB)\n";
+  }
+}
+
+void ibd_model::setup(const ibd_data &data, const std::vector<std::string>& _sample_prefix, const std::vector<int>& _sample_ploidy, const ibd_settings& set) {
+  this->data = &data;
+  this->set = set;
+  
+  sample_prefix = _sample_prefix;
+  sample_ploidy = _sample_ploidy;
 
   // Group samples by ploidy
   std::vector<int> sample_unique_ploidy = sample_ploidy;

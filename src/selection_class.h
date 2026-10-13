@@ -1,6 +1,8 @@
 #ifndef __SELECTION_CLASS_H
 #define __SELECTION_CLASS_H
 
+#include <iomanip>
+
 class selection {
 public:
     int pos;

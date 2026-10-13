@@ -2,6 +2,10 @@
 #define __READ_INPUT_H
 
 #include "ibd_utils.h"
+#include "cmd_line.h"
+#include "markov_chain.h"
+#include "genotype_emissions.h"
+#include "subsample.h"
 #include <fstream>
 
 void read_file ( cmd_line &options, vector<markov_chain> &markov_chain_information, map<int,vector<vector<int> > > &state_list, vector<int> &position, vector<double> &recombination_rate, vector<string> &chromosomes ) {

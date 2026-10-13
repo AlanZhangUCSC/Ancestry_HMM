@@ -181,7 +181,7 @@ public:
     if (force_method != 0) {
       // check for risky columns
       for (arma::uword i = 0; i < X.n_cols; i++) {
-        double colsum = arma::accu(Y.col(i));
+        double colsum = arma::accu(X.col(i));
         double ymax   = arma::abs(Y.col(i)).max();
         double risk   = 2.2e-16 * n_states * ymax * sqrtpi_max / std::max(colsum, 1e-300);
         if (risk > risk_tol) risky.push_back(i);

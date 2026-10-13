@@ -1,6 +1,8 @@
 #ifndef __MARKOV_CHAIN_H
 #define __MARKOV_CHAIN_H
 
+#include "ploidy_path.h"
+
 /// will include all basic information for input data and functions to compute forward, backward, forward-backward, and viterbi
 class markov_chain {
 public:

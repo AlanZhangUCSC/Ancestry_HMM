@@ -18,7 +18,10 @@ ahmms:
 ahmm:
 	$(CXX) -O3 $(CXXFLAGS) -o ancestry_hmm ancestry_hmm.cpp $(ARMAFLAGS)
 
-	
+test_ibd:
+	$(CXX) -O2 $(CXXFLAGS) -I. -o tests/test_ibd tests/test_ibd.cpp $(ARMAFLAGS)
+
+
 ## if you have a local install of google perftools, please add  a TCFlag link. 
 ###  $(LINK.cc) -std=c++11 -O3 -o ahmm-s ahmms.cpp $(ARMAFLAGS)  $(TCFLAGS)
 
