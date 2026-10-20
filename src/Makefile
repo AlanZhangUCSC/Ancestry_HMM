@@ -21,6 +21,9 @@ ahmm:
 test_ibd:
 	$(CXX) -O2 $(CXXFLAGS) -I. -o tests/test_ibd tests/test_ibd.cpp $(ARMAFLAGS)
 
+ibd_qdump:
+	$(CXX) -O3 $(CXXFLAGS) -I. -o tools/ibd_qdump tools/ibd_qdump.cpp $(ARMAFLAGS)
+
 
 ## if you have a local install of google perftools, please add  a TCFlag link. 
 ###  $(LINK.cc) -std=c++11 -O3 -o ahmm-s ahmms.cpp $(ARMAFLAGS)  $(TCFLAGS)

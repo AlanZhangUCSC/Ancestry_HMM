@@ -167,8 +167,7 @@ vector<double> brute_allele_count(const ibd::colored_state &st, int n, const dou
             if (fixed) {
                 double f = CA / (CA + Ca);
                 p *= pow(f, q[j]) * pow(1 - f, Kj[j] - q[j]);
-           }
-            else {
+           } else {
                 double a = CA + 1, b = Ca + 1;
                 p *= exp(lgamma(a + q[j]) + lgamma(b + Kj[j] - q[j]) - lgamma(a + b + Kj[j]) - (lgamma(a) + lgamma(b) - lgamma(a + b)));
            }
@@ -328,8 +327,7 @@ void test_kernels() {
                 double mv = (tau - (1 - exp(-2 * tau)) / 2) / 2;
                 CHECK(rel(ker[p].get_esc_rate(1, 1), esc) < 1e-12, "n=2 {1,1} escape");
                 CHECK(rel(ker[p].get_move_rate(1, 1, 1), mv) < 1e-12, "n=2 {1,1} move");
-           }
-            else {
+           } else {
                 double e21 = exp(-tau) / (1 - exp(-tau)) * (tau - (1 - exp(-2 * tau)) / 2);
                 double e22 = 1 - tau * exp(-tau) / (1 - exp(-tau));
                 cerr << "\t  n=2 {2}: esc(2,1) MC " << ker[p].get_esc_rate(2, 1) << " exact " << e21 << "; esc(2,2) MC " << ker[p].get_esc_rate(2, 2) << " exact " << e22 << "\n";
@@ -368,7 +366,7 @@ void test_kernels() {
                 Y1,                             /// esc(2,2)
                 P0 + O0 * O1 + P1,              /// move(1->1,1)   (needs n >= 4)
                 2 * P0 + O0 * O1 + P1,          /// move(1->2,1)
-                2 * (P0 + O0 * O1),           /// move(2->1,1)
+                2 * (P0 + O0 * O1),             /// move(2->1,1)
                 P1                              /// move(2->1,2)
            };
             for (int k = 0; k < 7; k ++) {ex[k] += wgt * v[k]; ex2[k] += wgt * v[k] * v[k];}
@@ -525,8 +523,9 @@ void test_hmm_likelihood() {
                         for (int g = 0; g <= n; g ++) val += pg[g] * Lt[g];
                         e(s) = val;
                    }
-               }
-                else lmax = 0;
+                } else {
+                    lmax = 0;
+                }
                 if (v == 0 || v == 180) alpha = G.pi % e;
                 else alpha = (expmat(data.dist[v] * G.rm.Q).t() * alpha) % e;
                 double s = accu(alpha);

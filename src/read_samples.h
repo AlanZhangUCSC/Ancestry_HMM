@@ -1,7 +1,7 @@
 #ifndef __READ_SAMPLES_H
 #define __READ_SAMPLES_H
 
-void read_samples( vector<markov_chain> &markov_chain_information, string &input_file, bool viterbi) {
+void read_samples( vector<markov_chain> &markov_chain_information, string &input_file, bool viterbi, bool ibd) {
 
     ifstream in ( input_file.c_str() ) ;
     while ( !in.eof() ) {
@@ -12,12 +12,15 @@ void read_samples( vector<markov_chain> &markov_chain_information, string &input
             continue ;
         }
         
-        if ( viterbi == false ) {
-            new_sample.output_file.append( ".posterior" ) ;
+        if ( !ibd ) {
+            if ( viterbi == false ) {
+                new_sample.output_file.append( ".posterior" ) ;
+            }
+            else {
+                new_sample.output_file.append( ".viterbi" ) ;
+            }
         }
-        else {
-            new_sample.output_file.append( ".viterbi" ) ;
-        }
+
         
         in >> new_sample.number_chromosomes ;
         

@@ -18,7 +18,7 @@ int run_ancestry_ibd(cmd_line &options) {
   
   // Get sample ids and ploidy from sample file.. Using the same function as the ancestry HMM main.cpp.
   std::cerr << "\t\t\t\t" << (double) (clock() - t) << " ms\n" << "reading sample ids and ploidy from " << options.sample_file; t = clock();
-  read_samples(markov_chain_information, options.sample_file, options.viterbi);
+  read_samples(markov_chain_information, options.sample_file, options.viterbi, true);
 
   // Read data from input file.
   std::cerr << "\t\t\t\t" << (double) (clock() - t) << " ms\n" << "reading data from " << options.input_file; t = clock();

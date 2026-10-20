@@ -80,15 +80,15 @@ void cmd_line::read_cmd_line ( int argc, char *argv[] ) {
   ibd = false;
   ibd_mc = 1000;          // Monte Carlo genealogies per IBD partition
   ibd_seed = 216769420;   // default using culturally significant numbers
-  int ibd_max_coal = -1;  // keep states with at most this many within-pool coalescences (-1: all)
-  int ibd_max_states = std::numeric_limits<int>::max();  // automatic truncation if the full state space is larger
-  bool ibd_no_symmetrize = false;   // use the raw Monte Carlo generator (no reversible projection)
-  int ibd_method = -1;              // propagation: -1 auto, 0 eigen, 1 uniformization
-  bool ibd_full_posterior = false;  // write the posterior of every colored IBD state
-  string ibd_write_q = "";          // write states, pi and Q to this file
-  double ibd_cache_mb = 2048;       // memory budget for precomputed emissions
-  double ibd_t_tol = 1e-6;          // golden-section tolerance on log(t)
-  int ibd_precision = 6;            // digits in --ibd output files
+  ibd_max_coal = -1;  // keep states with at most this many within-pool coalescences (-1: all)
+  ibd_max_states = std::numeric_limits<int>::max();  // automatic truncation if the full state space is larger
+  ibd_no_symmetrize = false;   // use the raw Monte Carlo generator (no reversible projection)
+  ibd_method = -1;              // propagation: -1 auto, 0 eigen, 1 uniformization
+  ibd_full_posterior = false;  // write the posterior of every colored IBD state
+  ibd_write_q = "";          // write states, pi and Q to this file
+  ibd_cache_mb = 2048;       // memory budget for precomputed emissions
+  ibd_t_tol = 1e-6;          // golden-section tolerance on log(t)
+  ibd_precision = 6;            // digits in --ibd output files
     
 	/// accept command line parameters
 	for (int i=1; i<argc; i++) {
