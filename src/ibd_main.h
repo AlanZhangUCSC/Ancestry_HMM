@@ -4,8 +4,16 @@
 #include "ibd_utils.h"
 #include "ibd_hmm.h"
 #include "ibd_golden_search.h"
+#include <filesystem>
 
 int run_ancestry_ibd(cmd_line &options) {
+
+  // check dir exists and error if not
+  if (options.output_dir != "" && !std::filesystem::exists(options.output_dir)) {
+    std::cerr << "Error: output directory " << options.output_dir << " does not exist" << std::endl;
+    return 1;
+  }
+
   std::cout << "Running ancestry-IBD model" << std::endl;
 
   // time tracking

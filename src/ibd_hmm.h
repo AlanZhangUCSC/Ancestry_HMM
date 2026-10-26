@@ -14,6 +14,7 @@ namespace ibd {
 
 class ibd_settings {
   public:
+    std::string output_dir;
     double two_N;
     double m;
     int mc_samples;
@@ -35,7 +36,8 @@ class ibd_settings {
         write_q(""), cache_mb(2048), precision(6), verbose(true) {}
   
     ibd_settings(const cmd_line &opt)
-      : two_N(opt.ne),
+      : output_dir(opt.output_dir),
+        two_N(opt.ne),
         m(opt.ancestry_proportion[1]),
         mc_samples(opt.ibd_mc),
         seed(static_cast<uint64_t>(opt.ibd_seed)),
@@ -93,13 +95,14 @@ class ibd_model {
 
 void ibd_model::set_time(double t) {
   current_t = t;
-  for (auto &group : groups) {
+  for (size_t i = 0; i < groups.size(); i++) {
+    auto &group = groups[i];
     group.rm.build(group.sp, t, set.two_N, set.m, set.mc_samples, set.seed, set.symmetrize, false);
     group.prop.force_method = set.symmetrize ? set.force_method : 1;
     group.prop.build(group.rm.Q, group.rm.logpi, set.symmetrize && set.force_method != 1);
     group.prop.amortize_steps = (double) data->n_sites() * group.samples.size();
     group.pi.set_size(group.sp.size());
-    for (size_t i = 0; i < group.sp.size(); i++) group.pi(i) = std::exp(group.rm.logpi[i]);
+    for (size_t j = 0; j < group.sp.size(); j++) group.pi(j) = std::exp(group.rm.logpi[j]);
   }
 }
 
@@ -118,6 +121,7 @@ double ibd_model::log_likelihood() {
     std::vector<std::vector<double>>        tmpC(sample_size);
 
     for (size_t i = 0; i < d.n_blocks(); i++) {
+
       size_t v0 = d.block_start[i];
       size_t v1 = d.block_start[i+1];
 
@@ -332,10 +336,10 @@ void ibd_model::decode_posterior() {
     for (size_t j = 0; j < group.samples.size(); j++) {
       int sample = group.samples[j];
       std::string base = sample_prefix[sample];
-      std::ofstream out((base + ".posterior").c_str());
-      std::ofstream sum((base + ".ibd_summary").c_str());
+      std::ofstream out(set.output_dir + "/" + base + ".posterior");
+      std::ofstream sum(set.output_dir + "/" + base + ".ibd_summary");
       std::ofstream full;
-      if (set.full_posterior) full.open((base + ".ibd_posterior").c_str());
+      if (set.full_posterior) full.open(set.output_dir + "/" + base + ".ibd_posterior");
       out.precision(set.precision);
       sum.precision(set.precision);
       full.precision(set.precision);

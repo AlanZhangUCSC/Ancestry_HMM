@@ -16,6 +16,7 @@ void print_usage() {
     
     cerr << "\toptional:" << endl;
     cerr << "\t\t--help\t\t\tprint this help statement" << endl;
+    cerr << "\t\t--output-dir [string]\toutput directory" << endl;
     cerr << "\t\t--ne [int]\t\teffective population size of the admixed population" << endl;
     cerr << "\t\t-g\t\t\tsamples are specified with genotypes rather than read counts" << endl;
     cerr << "\t\t--precision [int]\tmodify float and double precision to int" << endl;

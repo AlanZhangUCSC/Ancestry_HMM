@@ -2,6 +2,9 @@
 #define __READ_CMD_LINE_H
 
 void cmd_line::read_cmd_line ( int argc, char *argv[] ) {
+  // output dir
+  output_dir = ".";
+
   ///defaults
   ancestral_fixed = false ;                  /// set to true for qtl or experimental evolution application if ancestral genotypes are known and at fixed frequencies.
   
@@ -157,6 +160,10 @@ void cmd_line::read_cmd_line ( int argc, char *argv[] ) {
         
         if ( strcmp(argv[i],"-g") == 0 ) {
             genotype = true ;
+        }
+
+        if ( strcmp(argv[i],"--output-dir") == 0 ) {
+            output_dir = string(argv[++i]) ;
         }
         
         if ( strcmp(argv[i],"--output-ancestry") == 0 ) {

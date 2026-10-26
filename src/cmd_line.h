@@ -5,6 +5,9 @@
 class cmd_line {
 public:
     
+    /// output directory
+    string output_dir;
+    
     /// terms to bound the optimization
     double t_max;
     double t_min;
